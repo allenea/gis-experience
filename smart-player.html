@@ -18,6 +18,7 @@
       height: 100%;
       display: none;
       background: black;
+      border: none;
     }
     #error {
       display: none;
@@ -33,7 +34,11 @@
   <div id="error">⚠️ Unable to load this stream.</div>
 
   <script>
-    const url = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
+    const rawUrl = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
+    const url = rawUrl.startsWith("http://")
+      ? `https://dry-snowflake-647e.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`
+      : rawUrl;
+
     const video = document.getElementById("video");
     const img = document.getElementById("image");
     const iframe = document.getElementById("iframe");
@@ -45,7 +50,7 @@
     }
 
     function loadStream() {
-      if (!url || url.startsWith("http://")) {
+      if (!url) {
         show(errorDiv);
         return;
       }
@@ -75,7 +80,7 @@
           show(errorDiv);
         }
       } else if (/\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i.test(url)) {
-        img.src = url + "?t=" + Date.now();  // prevent caching
+        img.src = url + "?t=" + Date.now(); // prevent caching
         show(img);
       } else if (url.startsWith("https://")) {
         iframe.src = url;
