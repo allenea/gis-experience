@@ -35,14 +35,13 @@
 
   <script>
     const rawUrl = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
-    const url = rawUrl.endsWith(".m3u8")
-      ? `https://dry-snowflake-647e.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`
-      : rawUrl;
-
     const video = document.getElementById("video");
     const img = document.getElementById("image");
     const iframe = document.getElementById("iframe");
     const errorDiv = document.getElementById("error");
+
+    // Always proxy via Cloudflare Worker
+    const url = `https://dry-snowflake-647e.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
 
     function show(element) {
       [video, img, iframe, errorDiv].forEach(el => el.style.display = "none");
@@ -50,12 +49,12 @@
     }
 
     function loadStream() {
-      if (!url) {
+      if (!rawUrl) {
         show(errorDiv);
         return;
       }
 
-      if (url.endsWith(".m3u8")) {
+      if (rawUrl.endsWith(".m3u8")) {
         if (Hls.isSupported()) {
           const hls = new Hls();
           hls.loadSource(url);
@@ -65,6 +64,7 @@
             show(video);
           });
           hls.on(Hls.Events.ERROR, (_, data) => {
+            console.error("HLS.js error", data);
             if (data.fatal) {
               hls.destroy();
               show(errorDiv);
@@ -79,11 +79,11 @@
         } else {
           show(errorDiv);
         }
-      } else if (/\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i.test(url)) {
-        img.src = url + "?t=" + Date.now(); // prevent caching
+      } else if (/\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i.test(rawUrl)) {
+        img.src = rawUrl + "?t=" + Date.now(); // prevent caching
         show(img);
-      } else if (url.startsWith("https://")) {
-        iframe.src = url;
+      } else if (rawUrl.startsWith("https://")) {
+        iframe.src = rawUrl;
         show(iframe);
       } else {
         show(errorDiv);
