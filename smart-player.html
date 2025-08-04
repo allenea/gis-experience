@@ -35,7 +35,7 @@
 
   <script>
     const rawUrl = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
-    const proxyUrl = rawUrl;  // 👉 no proxy
+    const proxyUrl = `https://stream-proxy.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
 
     const video = document.getElementById("video");
     const img = document.getElementById("image");
