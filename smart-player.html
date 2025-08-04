@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Stream Viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: black;
+      color: white;
+      font-family: sans-serif;
+    }
+    video, img, iframe {
+      width: 100%;
+      height: 100%;
+      display: none;
+      background: black;
+    }
+    #error {
+      display: none;
+      padding: 1em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <video id="video" controls autoplay muted playsinline></video>
+  <img id="image" alt="Live camera image">
+  <iframe id="iframe" allowfullscreen></iframe>
+  <div id="error">⚠️ Unable to load this stream.</div>
+
+  <script>
+    const url = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
+    const video = document.getElementById("video");
+    const img = document.getElementById("image");
+    const iframe = document.getElementById("iframe");
+    const errorDiv = document.getElementById("error");
+
+    function show(element) {
+      [video, img, iframe, errorDiv].forEach(el => el.style.display = "none");
+      element.style.display = "block";
+    }
+
+    function loadStream() {
+      if (!url || url.startsWith("http://")) {
+        show(errorDiv);
+        return;
+      }
+
+      if (url.endsWith(".m3u8")) {
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource(url);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(() => show(errorDiv));
+            show(video);
+          });
+          hls.on(Hls.Events.ERROR, (_, data) => {
+            if (data.fatal) {
+              hls.destroy();
+              show(errorDiv);
+            }
+          });
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = url;
+          video.addEventListener("loadedmetadata", () => {
+            video.play().catch(() => show(errorDiv));
+            show(video);
+          });
+        } else {
+          show(errorDiv);
+        }
+      } else if (/\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i.test(url)) {
+        img.src = url + "?t=" + Date.now();  // prevent caching
+        show(img);
+      } else if (url.startsWith("https://")) {
+        iframe.src = url;
+        show(iframe);
+      } else {
+        show(errorDiv);
+      }
+    }
+
+    loadStream();
+  </script>
+</body>
+</html>
