@@ -79,7 +79,7 @@
           show(errorDiv);
         }
       } else if (/\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i.test(rawUrl)) {
-        img.src = rawUrl + "?t=" + Date.now(); // prevent caching
+        img.src = rawUrl + "?t=" + Date.now();
         show(img);
       } else if (rawUrl.startsWith("https://")) {
         iframe.src = rawUrl;
