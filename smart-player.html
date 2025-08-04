@@ -35,8 +35,7 @@
 
   <script>
     const rawUrl = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
-    const needsProxy = /^http:\/\//.test(rawUrl) || /\.m3u8$/i.test(rawUrl);
-    const url = needsProxy
+    const url = rawUrl.startsWith("http://")
       ? `https://dry-snowflake-647e.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`
       : rawUrl;
 
@@ -51,10 +50,7 @@
     }
 
     function loadStream() {
-      if (!url) {
-        show(errorDiv);
-        return;
-      }
+      if (!url) return show(errorDiv);
 
       if (url.endsWith(".m3u8")) {
         if (Hls.isSupported()) {
