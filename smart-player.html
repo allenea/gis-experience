@@ -35,8 +35,9 @@
 
   <script>
     const rawUrl = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
-    const needsProxy = /^http:\/\//.test(rawUrl) || /\.m3u8$/i.test(rawUrl);
-    const url = needsProxy
+
+    // Automatically wrap HTTP streams with Cloudflare proxy
+    const url = rawUrl.startsWith("http://")
       ? `https://dry-snowflake-647e.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`
       : rawUrl;
 
@@ -81,7 +82,7 @@
           show(errorDiv);
         }
       } else if (/\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i.test(url)) {
-        img.src = url + "?t=" + Date.now(); // prevent caching
+        img.src = url + "?t=" + Date.now(); // bust cache
         show(img);
       } else if (url.startsWith("https://")) {
         iframe.src = url;
