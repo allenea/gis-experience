@@ -1,98 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Live Stream Viewer</title>
+  <meta charset="UTF-8" />
+  <title>HLS Player</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      background-color: black;
-      color: white;
-      font-family: sans-serif;
+      background: black;
     }
     video {
       width: 100%;
       height: 100%;
       background: black;
     }
-    #error {
-      display: none;
-      padding: 1em;
-      text-align: center;
-    }
-    #retry {
-      margin-top: 1em;
-      padding: 0.5em 1em;
-      font-size: 1em;
-    }
   </style>
 </head>
 <body>
   <video id="video" controls autoplay muted playsinline></video>
-  <div id="error">
-    ⚠️ Unable to load the stream.<br>
-    Only `.m3u8` (HLS) streams over HTTPS are supported.<br>
-    <button id="retry">🔄 Retry</button>
-  </div>
-
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const src = urlParams.get("src");
     const video = document.getElementById("video");
-    const errorDiv = document.getElementById("error");
-    const retryBtn = document.getElementById("retry");
-    const params = new URLSearchParams(window.location.search);
-    const rawUrl = params.get("src") || "";
-    const streamUrl = decodeURIComponent(rawUrl);
 
-    function showError(reason = "") {
-      console.warn("Stream failed:", reason);
-      video.style.display = "none";
-      errorDiv.style.display = "block";
+    if (!src) {
+      document.body.innerHTML = "<p style='color:white;'>⚠️ No stream provided.</p>";
+    } else if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(src);
+      hls.attachMedia(video);
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = src;
+    } else {
+      document.body.innerHTML = "<p style='color:white;'>⚠️ Unable to load the live stream.</p>";
     }
-
-    function isM3U8(url) {
-      return url.startsWith("https://") && url.endsWith(".m3u8");
-    }
-
-    function loadStream() {
-      errorDiv.style.display = "none";
-      video.style.display = "block";
-      video.src = "";
-
-      if (!isM3U8(streamUrl)) {
-        showError("Invalid or insecure stream URL");
-        return;
-      }
-
-      if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(streamUrl);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(err => showError("Autoplay error: " + err));
-        });
-
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          if (data.fatal) {
-            hls.destroy();
-            showError("HLS fatal error: " + data.details);
-          }
-        });
-      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = streamUrl;
-        video.addEventListener("loadedmetadata", () => {
-          video.play().catch(err => showError("Autoplay error: " + err));
-        });
-      } else {
-        showError("Browser does not support HLS");
-      }
-    }
-
-    retryBtn.addEventListener("click", () => loadStream());
-    loadStream();
   </script>
 </body>
 </html>
