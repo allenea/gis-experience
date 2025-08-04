@@ -35,13 +35,12 @@
 
   <script>
     const rawUrl = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
+    const proxyUrl = `https://dry-snowflake-647e.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
+
     const video = document.getElementById("video");
     const img = document.getElementById("image");
     const iframe = document.getElementById("iframe");
     const errorDiv = document.getElementById("error");
-
-    // Always proxy via Cloudflare Worker
-    const url = `https://dry-snowflake-647e.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`;
 
     function show(element) {
       [video, img, iframe, errorDiv].forEach(el => el.style.display = "none");
@@ -57,7 +56,7 @@
       if (rawUrl.endsWith(".m3u8")) {
         if (Hls.isSupported()) {
           const hls = new Hls();
-          hls.loadSource(url);
+          hls.loadSource(proxyUrl);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             video.play().catch(() => show(errorDiv));
@@ -71,7 +70,7 @@
             }
           });
         } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          video.src = url;
+          video.src = proxyUrl;
           video.addEventListener("loadedmetadata", () => {
             video.play().catch(() => show(errorDiv));
             show(video);
