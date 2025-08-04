@@ -35,7 +35,10 @@
 
   <script>
     const rawUrl = decodeURIComponent(new URLSearchParams(location.search).get("src") || "");
-    const proxyUrl = rawUrl;
+    const needsProxy = /^http:\/\//.test(rawUrl) || /\.m3u8$/i.test(rawUrl);
+    const url = needsProxy
+      ? `https://dry-snowflake-647e.allenea.workers.dev/?url=${encodeURIComponent(rawUrl)}`
+      : rawUrl;
 
     const video = document.getElementById("video");
     const img = document.getElementById("image");
@@ -48,29 +51,28 @@
     }
 
     function loadStream() {
-      if (!rawUrl) {
+      if (!url) {
         show(errorDiv);
         return;
       }
 
-      if (rawUrl.endsWith(".m3u8")) {
+      if (url.endsWith(".m3u8")) {
         if (Hls.isSupported()) {
           const hls = new Hls();
-          hls.loadSource(proxyUrl);
+          hls.loadSource(url);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             video.play().catch(() => show(errorDiv));
             show(video);
           });
           hls.on(Hls.Events.ERROR, (_, data) => {
-            console.error("HLS.js error", data);
             if (data.fatal) {
               hls.destroy();
               show(errorDiv);
             }
           });
         } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          video.src = proxyUrl;
+          video.src = url;
           video.addEventListener("loadedmetadata", () => {
             video.play().catch(() => show(errorDiv));
             show(video);
@@ -78,11 +80,11 @@
         } else {
           show(errorDiv);
         }
-      } else if (/\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i.test(rawUrl)) {
-        img.src = rawUrl + "?t=" + Date.now();
+      } else if (/\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i.test(url)) {
+        img.src = url + "?t=" + Date.now(); // prevent caching
         show(img);
-      } else if (rawUrl.startsWith("https://")) {
-        iframe.src = rawUrl;
+      } else if (url.startsWith("https://")) {
+        iframe.src = url;
         show(iframe);
       } else {
         show(errorDiv);
